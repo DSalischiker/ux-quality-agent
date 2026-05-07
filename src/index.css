@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: 'Instrument Serif', 'Cormorant Garamond', Georgia, serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ---- Design tokens (light / default) ---- */
+:root {
+  --bg: #f6f3ee;
+  --bg-sunken: #efeae2;
+  --surface: #fffdf9;
+  --surface-2: #faf6f0;
+  --border: #e4ddd1;
+  --border-strong: #d4cbbb;
+  --ink: #1f1b15;
+  --ink-2: #3b3630;
+  --ink-3: #6b6458;
+  --ink-4: #968d7c;
+  --ink-5: #b7ae9c;
+
+  --accent: #b85c3c;
+  --accent-2: #9e4a2d;
+  --accent-soft: #f3dfd3;
+  --accent-ink: #fffdf9;
+
+  --high: #b43a2e;
+  --high-bg: #f7dcd6;
+  --med: #a56a1b;
+  --med-bg: #f6e4c4;
+  --low: #4e7b3a;
+  --low-bg: #dde9cf;
+
+  --pad-xl: 40px;
+  --pad-lg: 28px;
+  --pad-md: 20px;
+  --pad-sm: 14px;
+  --gap-md: 20px;
+  --gap-sm: 12px;
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+}
+
+/* ---- Accent palettes ---- */
+[data-accent="terracotta"] { --accent: #b85c3c; --accent-2: #9e4a2d; --accent-soft: #f3dfd3; }
+[data-accent="sage"]       { --accent: #5d7a5a; --accent-2: #4a6447; --accent-soft: #dce7da; }
+[data-accent="indigo"]     { --accent: #4a5582; --accent-2: #3a446b; --accent-soft: #dee2ef; }
+[data-accent="plum"]       { --accent: #7a4e67; --accent-2: #623c52; --accent-soft: #ebdde5; }
+[data-accent="ink"]        { --accent: #2a2620; --accent-2: #1a1713; --accent-soft: #e0dace; }
+
+/* ---- Dark theme ---- */
+[data-theme="dark"] {
+  --bg: #1b1814;
+  --bg-sunken: #15120f;
+  --surface: #23201b;
+  --surface-2: #2a2620;
+  --border: #3a342c;
+  --border-strong: #4b443a;
+  --ink: #f3ede1;
+  --ink-2: #ddd5c4;
+  --ink-3: #a69e8c;
+  --ink-4: #7a7363;
+  --ink-5: #5a5449;
+  --high-bg: #4a2118;
+  --med-bg: #4a3716;
+  --low-bg: #2c3e22;
+}
+[data-theme="dark"][data-accent="terracotta"] { --accent: #d97a5a; --accent-2: #e28a6b; --accent-soft: #3a2219; }
+[data-theme="dark"][data-accent="sage"]       { --accent: #8fac8a; --accent-2: #a0bc9b; --accent-soft: #243024; }
+[data-theme="dark"][data-accent="indigo"]     { --accent: #8090c0; --accent-2: #9aaad4; --accent-soft: #242a3e; }
+[data-theme="dark"][data-accent="plum"]       { --accent: #b085a0; --accent-2: #c097b0; --accent-soft: #33222c; }
+[data-theme="dark"][data-accent="ink"]        { --accent: #d6cebd; --accent-2: #e6dfd0; --accent-soft: #2c2820; }
+
+/* ---- Density ---- */
+[data-density="compact"] {
+  --pad-xl: 24px;
+  --pad-lg: 18px;
+  --pad-md: 14px;
+  --pad-sm: 10px;
+  --gap-md: 14px;
+  --gap-sm: 8px;
+}
+
+/* ---- Base resets ---- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.003em;
+}
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+input, textarea { font-family: inherit; color: inherit; }
+a { color: inherit; }
+
+/* ---- Pane scrollbars ---- */
+.pane::-webkit-scrollbar { width: 10px; }
+.pane::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+.pane::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-5);
+  background-clip: padding-box;
+  border: 3px solid transparent;
+}
+
+/* ---- Animations ---- */
+@keyframes token-pulse { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+@keyframes spin        { to { transform: rotate(360deg); } }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-token-pulse { animation: token-pulse 2.4s ease-in-out infinite; }
+.animate-spin-slow   { animation: spin .8s linear infinite; }
+.animate-fade-up     { animation: fadeUp .4s ease both; }
+.animate-fade-up-d1  { animation: fadeUp .4s .05s ease both; }
+.animate-fade-up-d2  { animation: fadeUp .4s .1s  ease both; }
+.animate-fade-up-d3  { animation: fadeUp .4s .15s ease both; }
+.animate-fade-up-d4  { animation: fadeUp .4s .2s  ease both; }
+
+/* ---- Loading step markers ---- */
+.step-marker-active::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: token-pulse 1.2s ease-in-out infinite;
+}
+.step-marker-done::after {
+  content: '';
+  width: 8px; height: 4px;
+  border-left: 1.5px solid var(--bg);
+  border-bottom: 1.5px solid var(--bg);
+  transform: rotate(-45deg) translate(1px, -1px);
+}
+
+/* ---- Empty-state illustration rings ---- */
+.illo-rings::before, .illo-rings::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  border: 1px dashed var(--border-strong);
+}
+.illo-rings::before { inset: -14px; opacity: .5; }
+.illo-rings::after  { inset: -28px; opacity: .25; }
+
+/* ---- Utility ---- */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
