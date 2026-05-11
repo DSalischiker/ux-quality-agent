@@ -1,5 +1,5 @@
 import { IconBtn } from '../../Topbar'
-import { CRIT_META } from '../../../data/mockAudit'
+import { CRIT_META } from '../../../data/criteriaMeta'
 import Scorecard from './Scorecard'
 import StrengthsSection from './StrengthsSection'
 import IssuesSection from './IssuesSection'
