@@ -8,7 +8,10 @@ import ContextField from './components/input/ContextField'
 import CriteriaField from './components/input/CriteriaField'
 import AnalyzeRow from './components/input/AnalyzeRow'
 import OutputPane from './components/output/OutputPane'
-import { buildMockAudit } from './data/mockAudit'
+import { CRIT_META } from './data/criteriaMeta'
+import { chatCompletion } from './services/aiClient'
+import { buildSystemPrompt } from './prompts/systemUxAudit'
+import { guidelinesForCriteria } from './guidelines'
 
 const LOADING_STEPS = [
   { label: 'Reading the screen',              ms: 900  },
@@ -19,9 +22,12 @@ const LOADING_STEPS = [
 
 export const STEPS = LOADING_STEPS
 
-function isValidUrl(u) {
-  if (!u) return false
-  return /^([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i.test(u) || /^https?:\/\/.+\..+/i.test(u)
+/** Quita ```json ... ``` si el modelo los incluye pese a las instrucciones. */
+function stripJsonFence(raw) {
+  let t = String(raw || '').trim()
+  const fenced = /^```(?:json)?\s*\n?([\s\S]*?)```$/im.exec(t)
+  if (fenced) return fenced[1].trim()
+  return t
 }
 
 export default function App() {
@@ -34,9 +40,11 @@ export default function App() {
   const [criteria, setCriteria]       = useState(new Set(['nielsen', 'a11y']))
 
   // ── Output state ─────────────────────────────────────────
-  const [phase, setPhase]             = useState('idle') // idle | loading | done
+  const [phase, setPhase]             = useState('idle') // idle | loading | done | error
   const [auditResult, setAuditResult] = useState(null)
   const [loadingStep, setLoadingStep] = useState(0)
+  const [errorMessage, setErrorMessage] = useState('')
+  const [providerUsed, setProviderUsed] = useState('')
 
   // ── Tweaks ───────────────────────────────────────────────
   const [tweaks, setTweaks]                   = useState({ theme: 'light', accent: 'terracotta', density: 'comfortable', format: 'bulleted' })
@@ -64,11 +72,12 @@ export default function App() {
   }, [])
 
   // ── Derived readiness ────────────────────────────────────
-  const hasSource = mode === 'screenshot' ? !!file : isValidUrl(url)
+  const hasSource = mode === 'screenshot' ? !!file : false
   const ready     = hasSource && context.trim().length >= 3 && criteria.size > 0
 
   const readinessText = () => {
-    if (!hasSource)                    return mode === 'screenshot' ? 'Add a screenshot' : 'Paste a valid URL'
+    if (mode === 'url')                return 'URL analysis is not available yet'
+    if (!hasSource)                    return 'Add a screenshot'
     if (context.trim().length < 3)     return 'Describe the screen'
     if (criteria.size === 0)           return 'Pick at least one criterion'
     return 'Ready'
@@ -100,30 +109,103 @@ export default function App() {
     try { window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [key]: value } }, '*') } catch (_) {}
   }, [])
 
-  const runAnalysis = useCallback(() => {
+  const normalizeAudit = useCallback((raw, selectedKeys, fallbackScreen) => {
+    const issues = Array.isArray(raw?.issues) ? raw.issues : []
+    const strengths = Array.isArray(raw?.strengths) ? raw.strengths : []
+    const selected = Array.isArray(raw?.selected) ? raw.selected.filter((k) => selectedKeys.includes(k)) : selectedKeys
+    const countsFromIssues = {
+      high: issues.filter((item) => item?.sev === 'HIGH').length,
+      med: issues.filter((item) => item?.sev === 'MEDIUM').length,
+      low: issues.filter((item) => item?.sev === 'LOW').length,
+    }
+
+    return {
+      screen: raw?.screen || fallbackScreen,
+      selected,
+      strengths,
+      issues,
+      counts: raw?.counts || countsFromIssues,
+      roadmap: Array.isArray(raw?.roadmap) ? raw.roadmap : [],
+    }
+  }, [])
+
+  const runAnalysis = useCallback(async () => {
+    if (mode !== 'screenshot' || !fileDataUrl) return
+
     setPhase('loading')
     setLoadingStep(0)
     setAuditResult(null)
+    setErrorMessage('')
+    setProviderUsed('')
 
-    // TODO: LLM API call goes here
-    // Input:  fileDataUrl (base64 string) or url (string), context (string), criteria (Set)
-    // Output: audit result object — { screen, selected, strengths, issues, counts, roadmap }
-    let i = 0
-    const tick = () => {
-      if (i >= LOADING_STEPS.length) {
-        setAuditResult(buildMockAudit({ context, criteria }))
-        setPhase('done')
-        return
+    let currentStep = 0
+    const loadingInterval = window.setInterval(() => {
+      currentStep = (currentStep + 1) % LOADING_STEPS.length
+      setLoadingStep(currentStep)
+    }, 1000)
+
+    const selectedKeys = [...criteria]
+    const criteriaBlocks = guidelinesForCriteria(selectedKeys).map((entry) => ({
+      ...entry,
+      label: CRIT_META[entry.key]?.label || entry.key,
+    }))
+    const criteriaText = selectedKeys
+      .map((key) => `- ${key}: ${CRIT_META[key]?.label || key}`)
+      .join('\n')
+
+    const userText = [
+      'User context:',
+      context.trim(),
+      '',
+      'Evaluation criteria selected by user:',
+      criteriaText,
+      '',
+      'Task:',
+      'Analyze the screenshot using only visible evidence and these selected criteria. Return valid JSON only.',
+    ].join('\n')
+
+    try {
+      const response = await chatCompletion({
+        messages: [
+          { role: 'system', content: buildSystemPrompt({ criteriaBlocks }) },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: userText },
+              { type: 'image_url', image_url: { url: fileDataUrl } },
+            ],
+          },
+        ],
+        responseFormat: { type: 'json_object' },
+        maxTokens: 8192,
+      })
+      setProviderUsed(response?.provider || '')
+
+      const content = response?.choices?.[0]?.message?.content
+      const text = Array.isArray(content)
+        ? content.map((part) => (typeof part?.text === 'string' ? part.text : '')).join('\n')
+        : String(content || '')
+
+      if (!text) {
+        throw new Error('The model returned an empty response.')
       }
-      setLoadingStep(i)
-      setTimeout(() => { i++; tick() }, LOADING_STEPS[i].ms)
+
+      const parsed = JSON.parse(stripJsonFence(text))
+      const normalized = normalizeAudit(parsed, selectedKeys, context.trim())
+      setAuditResult(normalized)
+      setPhase('done')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unexpected error during analysis.'
+      setErrorMessage(message)
+      setPhase('error')
+    } finally {
+      window.clearInterval(loadingInterval)
     }
-    tick()
-  }, [context, criteria])
+  }, [context, criteria, fileDataUrl, mode, normalizeAudit])
 
   const handleReset = useCallback(() => {
     setFile(null); setFileDataUrl(null); setUrl('')
-    setContext(''); setPhase('idle'); setAuditResult(null); setLoadingStep(0)
+    setContext(''); setPhase('idle'); setAuditResult(null); setLoadingStep(0); setErrorMessage(''); setProviderUsed('')
   }, [])
 
   // Cmd/Ctrl+Enter shortcut
@@ -167,7 +249,10 @@ export default function App() {
           phase={phase}
           auditResult={auditResult}
           loadingStep={loadingStep}
+          errorMessage={errorMessage}
+          providerUsed={providerUsed}
           format={tweaks.format}
+          onRetry={runAnalysis}
         />
       </main>
 
