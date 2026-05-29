@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import './App.css'
 import Topbar from './components/Topbar'
 import TweaksPanel from './components/TweaksPanel'
@@ -8,10 +8,10 @@ import ContextField from './components/input/ContextField'
 import CriteriaField from './components/input/CriteriaField'
 import AnalyzeRow from './components/input/AnalyzeRow'
 import OutputPane from './components/output/OutputPane'
-import { CRIT_META } from './data/criteriaMeta'
 import { chatCompletion } from './services/aiClient'
-import { buildSystemPrompt } from './prompts/systemUxAudit'
-import { guidelinesForCriteria } from './guidelines'
+import { buildAuditMessages } from './utils/buildAuditRequest'
+import { formatStructuralContext } from './utils/formatStructuralContext'
+import { validateUserUrl } from './utils/url'
 
 const LOADING_STEPS = [
   { label: 'Reading the screen',              ms: 900  },
@@ -30,6 +30,15 @@ function stripJsonFence(raw) {
   return t
 }
 
+async function fetchJsonApi(path) {
+  const response = await fetch(path)
+  const payload = await response.json().catch(() => ({}))
+  if (!response.ok || payload?.error) {
+    throw new Error(payload?.error || `Request failed (${response.status})`)
+  }
+  return payload
+}
+
 export default function App() {
   // ── Input state ──────────────────────────────────────────
   const [mode, setMode]               = useState('screenshot')
@@ -43,6 +52,7 @@ export default function App() {
   const [phase, setPhase]             = useState('idle') // idle | loading | done | error
   const [auditResult, setAuditResult] = useState(null)
   const [loadingStep, setLoadingStep] = useState(0)
+  const [loadingPreviewUrl, setLoadingPreviewUrl] = useState(null)
   const [errorMessage, setErrorMessage] = useState('')
   const [providerUsed, setProviderUsed] = useState('')
 
@@ -50,6 +60,8 @@ export default function App() {
   const [tweaks, setTweaks]                   = useState({ theme: 'light', accent: 'terracotta', density: 'comfortable', format: 'bulleted' })
   const [tweaksPanelOpen, setTweaksPanelOpen] = useState(false)
   const [tweaksBtnVisible, setTweaksBtnVisible] = useState(false)
+
+  const urlValidation = useMemo(() => validateUserUrl(url), [url])
 
   // Sync tweaks → body data-* attributes (CSS selectors target these)
   useEffect(() => {
@@ -72,14 +84,15 @@ export default function App() {
   }, [])
 
   // ── Derived readiness ────────────────────────────────────
-  const hasSource = mode === 'screenshot' ? !!file : false
+  const hasSource = mode === 'screenshot' ? !!file : urlValidation.valid
   const ready     = hasSource && context.trim().length >= 3 && criteria.size > 0
 
   const readinessText = () => {
-    if (mode === 'url')                return 'URL analysis is not available yet'
-    if (!hasSource)                    return 'Add a screenshot'
-    if (context.trim().length < 3)     return 'Describe the screen'
-    if (criteria.size === 0)           return 'Pick at least one criterion'
+    if (mode === 'url' && !url.trim())           return 'Enter a URL'
+    if (mode === 'url' && !urlValidation.valid)  return 'Enter a valid URL'
+    if (mode === 'screenshot' && !hasSource)       return 'Add a screenshot'
+    if (context.trim().length < 3)               return 'Describe the screen'
+    if (criteria.size === 0)                     return 'Pick at least one criterion'
     return 'Ready'
   }
 
@@ -130,10 +143,15 @@ export default function App() {
   }, [])
 
   const runAnalysis = useCallback(async () => {
-    if (mode !== 'screenshot' || !fileDataUrl) return
+    const isScreenshot = mode === 'screenshot'
+    const isUrl = mode === 'url'
+
+    if (isScreenshot && !fileDataUrl) return
+    if (isUrl && !urlValidation.valid) return
 
     setPhase('loading')
     setLoadingStep(0)
+    setLoadingPreviewUrl(null)
     setAuditResult(null)
     setErrorMessage('')
     setProviderUsed('')
@@ -144,38 +162,32 @@ export default function App() {
       setLoadingStep(currentStep)
     }, 1000)
 
-    const selectedKeys = [...criteria]
-    const criteriaBlocks = guidelinesForCriteria(selectedKeys).map((entry) => ({
-      ...entry,
-      label: CRIT_META[entry.key]?.label || entry.key,
-    }))
-    const criteriaText = selectedKeys
-      .map((key) => `- ${key}: ${CRIT_META[key]?.label || key}`)
-      .join('\n')
-
-    const userText = [
-      'User context:',
-      context.trim(),
-      '',
-      'Evaluation criteria selected by user:',
-      criteriaText,
-      '',
-      'Task:',
-      'Analyze the screenshot using only visible evidence and these selected criteria. Return valid JSON only.',
-    ].join('\n')
-
     try {
+      let imageDataUrl = fileDataUrl
+      let extraUserSections = []
+
+      if (isUrl) {
+        const encoded = encodeURIComponent(urlValidation.href)
+        const [screenshotPayload, scrapePayload] = await Promise.all([
+          fetchJsonApi(`/api/screenshot?url=${encoded}`),
+          fetchJsonApi(`/api/scrape?url=${encoded}`),
+        ])
+
+        imageDataUrl = `data:${screenshotPayload.mimeType};base64,${screenshotPayload.base64}`
+        setLoadingPreviewUrl(imageDataUrl)
+        extraUserSections = [formatStructuralContext(scrapePayload)]
+      }
+
+      const { selectedKeys, messages } = buildAuditMessages({
+        context,
+        criteriaSet: criteria,
+        imageDataUrl,
+        sourceMode: mode,
+        extraUserSections,
+      })
+
       const response = await chatCompletion({
-        messages: [
-          { role: 'system', content: buildSystemPrompt({ criteriaBlocks }) },
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: userText },
-              { type: 'image_url', image_url: { url: fileDataUrl } },
-            ],
-          },
-        ],
+        messages,
         responseFormat: { type: 'json_object' },
         maxTokens: 8192,
       })
@@ -201,11 +213,29 @@ export default function App() {
     } finally {
       window.clearInterval(loadingInterval)
     }
-  }, [context, criteria, fileDataUrl, mode, normalizeAudit])
+  }, [context, criteria, fileDataUrl, mode, normalizeAudit, urlValidation])
 
   const handleReset = useCallback(() => {
-    setFile(null); setFileDataUrl(null); setUrl('')
-    setContext(''); setPhase('idle'); setAuditResult(null); setLoadingStep(0); setErrorMessage(''); setProviderUsed('')
+    setFile(null)
+    setFileDataUrl(null)
+    setUrl('')
+    setContext('')
+    setPhase('idle')
+    setAuditResult(null)
+    setLoadingStep(0)
+    setLoadingPreviewUrl(null)
+    setErrorMessage('')
+    setProviderUsed('')
+  }, [])
+
+  const handleModeChange = useCallback((nextMode) => {
+    setMode(nextMode)
+    setPhase('idle')
+    setAuditResult(null)
+    setLoadingStep(0)
+    setLoadingPreviewUrl(null)
+    setErrorMessage('')
+    setProviderUsed('')
   }, [])
 
   // Cmd/Ctrl+Enter shortcut
@@ -231,7 +261,7 @@ export default function App() {
             file={file}
             fileDataUrl={fileDataUrl}
             url={url}
-            onModeChange={setMode}
+            onModeChange={handleModeChange}
             onFileLoad={handleFileLoad}
             onFileRemove={handleFileRemove}
             onUrlChange={setUrl}
@@ -249,6 +279,7 @@ export default function App() {
           phase={phase}
           auditResult={auditResult}
           loadingStep={loadingStep}
+          loadingPreviewUrl={loadingPreviewUrl}
           errorMessage={errorMessage}
           providerUsed={providerUsed}
           format={tweaks.format}

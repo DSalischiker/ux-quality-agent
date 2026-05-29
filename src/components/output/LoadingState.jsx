@@ -7,9 +7,9 @@ const STEPS = [
   'Drafting roadmap',
 ]
 
-export default function LoadingState({ currentStep }) {
+export default function LoadingState({ currentStep, previewImageUrl }) {
   const [elapsed, setElapsed] = useState(0)
-  const startRef = useRef(performance.now())
+  const startRef = useRef(null)
 
   useEffect(() => {
     startRef.current = performance.now()
@@ -34,6 +34,16 @@ export default function LoadingState({ currentStep }) {
         through a <em className="italic text-[var(--accent)]">senior reviewer's</em> eyes.
       </h2>
 
+      {previewImageUrl && (
+        <div className="mb-8 rounded-[var(--radius-lg)] border border-[var(--border)] overflow-hidden bg-[var(--surface)] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+          <img
+            src={previewImageUrl}
+            alt="Captured page preview"
+            className="w-full h-auto block max-h-[320px] object-cover object-top"
+          />
+        </div>
+      )}
+
       <div className="flex flex-col gap-0.5 border-t border-[var(--border)]">
         {STEPS.map((s, i) => {
           const isDone   = i < currentStep
@@ -47,7 +57,6 @@ export default function LoadingState({ currentStep }) {
                 isActive ? 'text-[var(--ink)]'   : 'text-[var(--ink-4)]',
               ].join(' ')}
             >
-              {/* Step marker */}
               <span className={[
                 'w-[18px] h-[18px] rounded-full border-[1.5px] grid place-items-center shrink-0 relative',
                 isDone   ? 'bg-[var(--ink-3)] border-[var(--ink-3)] step-marker-done'   :
