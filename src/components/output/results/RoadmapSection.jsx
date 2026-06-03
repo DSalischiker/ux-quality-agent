@@ -3,7 +3,7 @@ import { SectionHead } from './StrengthsSection'
 export default function RoadmapSection({ roadmap }) {
   return (
     <div className="animate-fade-up-d4">
-      <SectionHead mark="§ 03" title="Prioritized" titleEm="roadmap" />
+      <SectionHead mark="§ 04" title="Prioritized" titleEm="roadmap" />
       <div className="flex flex-col">
         {roadmap.map((r, i) => (
           <div

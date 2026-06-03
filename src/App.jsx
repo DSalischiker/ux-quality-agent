@@ -12,6 +12,7 @@ import { CRIT_META } from './data/criteriaMeta'
 import { chatCompletion } from './services/aiClient'
 import { buildSystemPrompt } from './prompts/systemUxAudit'
 import { guidelinesForCriteria } from './guidelines'
+import { computeScores } from './lib/scoring'
 
 const LOADING_STEPS = [
   { label: 'Reading the screen',              ms: 900  },
@@ -119,6 +120,11 @@ export default function App() {
       low: issues.filter((item) => item?.sev === 'LOW').length,
     }
 
+    const scores = computeScores({ issues, strengths, selected })
+
+    const rawNote = typeof raw?.scoreNote === 'string' ? raw.scoreNote.trim() : ''
+    const scoreNote = rawNote || 'Based on the issues found above.'
+
     return {
       screen: raw?.screen || fallbackScreen,
       selected,
@@ -126,6 +132,8 @@ export default function App() {
       issues,
       counts: raw?.counts || countsFromIssues,
       roadmap: Array.isArray(raw?.roadmap) ? raw.roadmap : [],
+      scores,
+      scoreNote,
     }
   }, [])
 

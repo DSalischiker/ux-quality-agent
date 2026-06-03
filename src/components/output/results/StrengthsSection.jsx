@@ -5,7 +5,7 @@ export default function StrengthsSection({ strengths, format }) {
 
   return (
     <div className="animate-fade-up-d2 mb-7">
-      <SectionHead mark="§ 01" title="What's" titleEm="working" />
+      <SectionHead mark="§ 02" title="What's" titleEm="working" />
       <div className={['flex flex-col', isNarrative ? 'gap-0 border-b border-[var(--border)]' : 'gap-2.5'].join(' ')}>
         {strengths.map((s, i) => (
           <div

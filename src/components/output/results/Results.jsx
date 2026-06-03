@@ -1,12 +1,13 @@
 import { IconBtn } from '../../Topbar'
 import { CRIT_META } from '../../../data/criteriaMeta'
 import Scorecard from './Scorecard'
+import ScoreBlock from './ScoreBlock'
 import StrengthsSection from './StrengthsSection'
 import IssuesSection from './IssuesSection'
 import RoadmapSection from './RoadmapSection'
 
 export default function Results({ audit, format }) {
-  const { screen, selected, strengths, issues, counts, roadmap } = audit
+  const { screen, selected, strengths, issues, counts, roadmap, scores, scoreNote } = audit
   const critLabels = selected.map(k => CRIT_META[k]?.label).filter(Boolean)
   const date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
@@ -45,6 +46,8 @@ export default function Results({ audit, format }) {
           </IconBtn>
         </div>
       </div>
+
+      <ScoreBlock scores={scores} scoreNote={scoreNote} selected={selected} />
 
       <Scorecard counts={counts} />
 
