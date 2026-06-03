@@ -6,15 +6,17 @@ export default function AnalyzeRow({ ready, readinessText, onAnalyze, onReset })
         disabled={!ready}
         onClick={onAnalyze}
         className={[
-          'inline-flex items-center gap-2 px-[18px] py-3 rounded-[10px] text-[13px] font-medium transition-all duration-150 relative overflow-hidden bg-[var(--ink)] text-[var(--bg)] [&_svg]:w-3.5 [&_svg]:h-3.5',
-          ready ? 'hover:bg-[var(--accent)]' : 'opacity-40 cursor-not-allowed',
+          'inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl text-[14px] font-semibold tracking-[-0.01em] transition-all duration-150 relative overflow-hidden bg-[var(--ink)] text-[var(--bg)] [&_svg]:w-4 [&_svg]:h-4',
+          ready
+            ? 'shadow-[0_4px_14px_-2px_rgba(31,27,21,0.35)] hover:bg-[var(--accent)] hover:shadow-[0_6px_20px_-2px_rgba(184,92,60,0.45)] hover:-translate-y-px active:translate-y-0 active:shadow-[0_2px_8px_-2px_rgba(31,27,21,0.35)]'
+            : 'opacity-40 cursor-not-allowed',
         ].join(' ')}
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="m5 12 4 4L19 6"/>
         </svg>
-        Analyze screen
-        <span className="font-mono text-[10.5px] px-[5px] py-[2px] bg-white/10 rounded ml-1">⌘↵</span>
+        Run Analysis
+        <span className="font-mono text-[10.5px] px-[6px] py-[3px] bg-white/15 rounded-md ml-1.5">⌘↵</span>
       </button>
 
       {/* Reset button */}

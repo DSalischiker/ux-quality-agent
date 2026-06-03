@@ -1,9 +1,49 @@
 const CRITERIA = [
-  { key: 'nielsen',   label: 'Nielsen heuristics' },
-  { key: 'a11y',      label: 'Accessibility (WCAG)' },
-  { key: 'hierarchy', label: 'Visual hierarchy' },
-  { key: 'copy',      label: 'Copy clarity' },
-  { key: 'mobile',    label: 'Mobile readiness' },
+  {
+    key: 'nielsen',
+    label: 'Nielsen heuristics',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+      </svg>
+    ),
+  },
+  {
+    key: 'a11y',
+    label: 'Accessibility (WCAG)',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="4" r="1.6" /><path d="M5 8h14" /><path d="M12 8v6" /><path d="m8.5 21 3.5-7 3.5 7" />
+      </svg>
+    ),
+  },
+  {
+    key: 'hierarchy',
+    label: 'Visual hierarchy',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" />
+      </svg>
+    ),
+  },
+  {
+    key: 'copy',
+    label: 'Copy clarity',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="4 7 4 4 20 4 20 7" /><line x1="9" y1="20" x2="15" y2="20" /><line x1="12" y1="4" x2="12" y2="20" />
+      </svg>
+    ),
+  },
+  {
+    key: 'mobile',
+    label: 'Mobile readiness',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="5" y="2" width="14" height="20" rx="2" ry="2" /><line x1="12" y1="18" x2="12.01" y2="18" />
+      </svg>
+    ),
+  },
 ]
 
 export default function CriteriaField({ criteria, onToggle }) {
@@ -19,7 +59,7 @@ export default function CriteriaField({ criteria, onToggle }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-5 gap-[25px]">
         {CRITERIA.map(c => {
           const pressed = criteria.has(c.key)
           return (
@@ -28,23 +68,39 @@ export default function CriteriaField({ criteria, onToggle }) {
               aria-pressed={pressed}
               onClick={() => onToggle(c.key)}
               className={[
-                'inline-flex items-center gap-2 py-2 pr-3.5 pl-2.5 rounded-full border text-[12.5px] font-medium transition-all duration-150 select-none',
+                'group relative flex flex-col items-center text-center gap-2 px-2 pt-3.5 pb-2.5 rounded-[10px] border-[1px]! border-solid! transition-colors duration-150 select-none',
                 pressed
-                  ? 'bg-[var(--accent-soft)] border-[var(--accent)] text-[var(--accent-2)]'
-                  : 'bg-[var(--surface)] border-[var(--border)] text-[var(--ink-2)] hover:border-[var(--border-strong)]',
+                  ? 'bg-[var(--accent-soft)] border-[var(--accent-2)]!'
+                  : 'bg-[var(--surface)] border-[#cec6ba]! hover:bg-[var(--surface-2)]',
               ].join(' ')}
             >
+              {/* Icon */}
               <span className={[
-                'w-4 h-4 rounded-full border-[1.5px] grid place-items-center transition-all duration-150 [&_svg]:w-2.5 [&_svg]:h-2.5',
+                'grid place-items-center transition-colors duration-150 [&_svg]:w-[20px] [&_svg]:h-[20px]',
+                pressed ? 'text-[var(--accent-2)]' : 'text-[var(--ink-3)] group-hover:text-[var(--ink-2)]',
+              ].join(' ')}>
+                {c.icon}
+              </span>
+
+              {/* Label */}
+              <span className={[
+                'text-[11px] font-medium leading-tight transition-colors duration-150 min-h-[26px] flex items-center',
+                pressed ? 'text-[var(--accent-2)]' : 'text-[var(--ink-2)]',
+              ].join(' ')}>
+                {c.label}
+              </span>
+
+              {/* Indicator */}
+              <span className={[
+                'w-[16px] h-[16px] rounded-full border-[1.5px] grid place-items-center transition-colors duration-150 [&_svg]:w-[10px] [&_svg]:h-[10px]',
                 pressed
                   ? 'bg-[var(--accent)] border-[var(--accent)] [&_svg]:opacity-100 [&_svg]:stroke-[var(--accent-ink)]'
                   : 'bg-[var(--surface-2)] border-[var(--border-strong)] [&_svg]:opacity-0',
               ].join(' ')}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5">
                   <polyline points="4 12 10 18 20 6"/>
                 </svg>
               </span>
-              {c.label}
             </button>
           )
         })}

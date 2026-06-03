@@ -53,6 +53,7 @@ export default function App() {
   const [auditResult, setAuditResult] = useState(null)
   const [loadingStep, setLoadingStep] = useState(0)
   const [loadingPreviewUrl, setLoadingPreviewUrl] = useState(null)
+  const [loadingExpectingImage, setLoadingExpectingImage] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [providerUsed, setProviderUsed] = useState('')
 
@@ -151,7 +152,8 @@ export default function App() {
 
     setPhase('loading')
     setLoadingStep(0)
-    setLoadingPreviewUrl(null)
+    setLoadingPreviewUrl(isScreenshot ? fileDataUrl : null)
+    setLoadingExpectingImage(true)
     setAuditResult(null)
     setErrorMessage('')
     setProviderUsed('')
@@ -224,6 +226,7 @@ export default function App() {
     setAuditResult(null)
     setLoadingStep(0)
     setLoadingPreviewUrl(null)
+    setLoadingExpectingImage(false)
     setErrorMessage('')
     setProviderUsed('')
   }, [])
@@ -234,6 +237,7 @@ export default function App() {
     setAuditResult(null)
     setLoadingStep(0)
     setLoadingPreviewUrl(null)
+    setLoadingExpectingImage(false)
     setErrorMessage('')
     setProviderUsed('')
   }, [])
@@ -280,6 +284,7 @@ export default function App() {
           auditResult={auditResult}
           loadingStep={loadingStep}
           loadingPreviewUrl={loadingPreviewUrl}
+          loadingExpectingImage={loadingExpectingImage}
           errorMessage={errorMessage}
           providerUsed={providerUsed}
           format={tweaks.format}

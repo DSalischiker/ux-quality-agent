@@ -10,7 +10,7 @@ function providerLabel(value) {
   return value || ''
 }
 
-export default function OutputPane({ phase, auditResult, loadingStep, loadingPreviewUrl, format, errorMessage, providerUsed, onRetry }) {
+export default function OutputPane({ phase, auditResult, loadingStep, loadingPreviewUrl, loadingExpectingImage, format, errorMessage, providerUsed, onRetry }) {
   const label = providerLabel(providerUsed)
   return (
     <section className="pane p-[var(--pad-xl)] overflow-y-auto min-h-[calc(100vh-61px)] bg-[var(--bg-sunken)]">
@@ -23,7 +23,7 @@ export default function OutputPane({ phase, auditResult, loadingStep, loadingPre
       )}
       {phase === 'idle'    && <EmptyState />}
       {phase === 'loading' && (
-        <LoadingState currentStep={loadingStep} previewImageUrl={loadingPreviewUrl} />
+        <LoadingState currentStep={loadingStep} previewImageUrl={loadingPreviewUrl} expectingImage={loadingExpectingImage} />
       )}
       {phase === 'done'    && auditResult && <Results audit={auditResult} format={format} />}
       {phase === 'error'   && <ErrorState message={errorMessage} providerUsed={label} onRetry={onRetry} />}

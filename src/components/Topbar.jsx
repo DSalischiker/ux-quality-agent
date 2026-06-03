@@ -10,10 +10,6 @@ export default function Topbar({ tweaksBtnVisible, onTweaksOpen }) {
           UX QA{' '}
           <em className="font-serif not-italic font-normal text-[var(--ink-3)] ml-1">agent</em>
         </div>
-        <span className="text-[11px] text-[var(--ink-3)] font-mono px-2 py-1 border border-[var(--border)] rounded-full bg-[var(--surface)]">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#4e7b3a] mr-1.5 align-[1px] animate-token-pulse" />
-          claude‑sonnet‑4
-        </span>
       </div>
 
       <div className="flex items-center gap-2">
