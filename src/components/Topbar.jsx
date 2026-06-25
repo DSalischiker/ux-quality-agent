@@ -17,11 +17,16 @@ export default function Topbar({ tweaksBtnVisible, onTweaksOpen }) {
       </div>
 
       <div className="flex items-center gap-2">
-        <IconBtn title="History">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>
-          </svg>
-        </IconBtn>
+        <div className="relative group flex items-center justify-center">
+          <div className="pointer-events-none px-2 py-1/2 rounded-md bg-[var(--surface-2)] text-[var(--ink)] border border-[var(--border)] text-[11px] font-medium whitespace-nowrap">
+            Coming soon
+          </div>
+          <IconBtn title="History">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>
+            </svg>
+          </IconBtn>
+        </div>
 
         {tweaksBtnVisible && (
           <IconBtn title="Tweaks" onClick={onTweaksOpen}>
