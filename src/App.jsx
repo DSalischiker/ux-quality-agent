@@ -9,6 +9,9 @@ import CriteriaField from './components/input/CriteriaField'
 import AnalyzeRow from './components/input/AnalyzeRow'
 import OutputPane from './components/output/OutputPane'
 import { chatCompletion } from './services/aiClient'
+import { buildSystemPrompt } from './prompts/systemUxAudit'
+import { guidelinesForCriteria } from './guidelines'
+import { computeScores } from './lib/scoring'
 import { buildAuditMessages } from './utils/buildAuditRequest'
 import { formatStructuralContext } from './utils/formatStructuralContext'
 import { validateUserUrl } from './utils/url'
@@ -132,6 +135,11 @@ export default function App() {
       low: issues.filter((item) => item?.sev === 'LOW').length,
     }
 
+    const scores = computeScores({ issues, strengths, selected })
+
+    const rawNote = typeof raw?.scoreNote === 'string' ? raw.scoreNote.trim() : ''
+    const scoreNote = rawNote || 'Based on the issues found above.'
+
     return {
       screen: raw?.screen || fallbackScreen,
       selected,
@@ -139,6 +147,8 @@ export default function App() {
       issues,
       counts: raw?.counts || countsFromIssues,
       roadmap: Array.isArray(raw?.roadmap) ? raw.roadmap : [],
+      scores,
+      scoreNote,
     }
   }, [])
 

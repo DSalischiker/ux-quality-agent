@@ -22,7 +22,7 @@ export default function IssuesSection({ issues, format }) {
 
   return (
     <div className="animate-fade-up-d3 mb-7">
-      <SectionHead mark="§ 02" title="Issues" titleEm="found" />
+      <SectionHead mark="§ 03" title="Issues" titleEm="found" />
       <div className={['flex flex-col', isNarrative ? 'gap-0' : 'gap-3'].join(' ')}>
         {issues.map((iss, idx) => {
           const isOpen = isNarrative || openSet.has(idx)
