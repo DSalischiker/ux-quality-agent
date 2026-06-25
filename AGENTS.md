@@ -4,7 +4,10 @@ Instructions for AI coding agents (Claude Code or similar) working on this repos
 
 ## What this project is
 
-A browser-only UX audit tool. The user provides a screenshot + context + selected evaluation criteria; a multimodal LLM returns a structured JSON audit (strengths, severity-tagged issues, roadmap). There is **no backend** — all LLM calls happen from `src/services/*` directly to Gemini or OpenRouter using `VITE_*` keys.
+A UX audit tool with a Vite + React frontend. The user provides a **screenshot or a public URL**, context, and selected evaluation criteria; a multimodal LLM returns a structured JSON audit (strengths, severity-tagged issues, roadmap).
+
+- **Screenshot mode:** fully client-side — LLM calls go from `src/services/*` directly to Gemini or OpenRouter using `VITE_*` keys.
+- **URL mode:** the frontend calls Vercel serverless routes in `api/` to capture a screenshot (ScreenshotOne) and scrape structural HTML; the audit image and extra context are then sent to the LLM from the browser as in screenshot mode.
 
 For project setup, scripts, and the full repo layout, see `README.md`.
 
@@ -19,7 +22,7 @@ When the user says "add a new skill for the agent to use during analysis," they 
 
 - The audit response is contractually JSON-only. Do not loosen the schema in `src/prompts/systemUxAudit.js` without also updating `normalizeAudit` in `App.jsx` and the result components under `src/components/output/results/`.
 - Provider adapters must return an OpenAI-shaped response (`choices[0].message.content`) so `aiClient.js` and `App.jsx` can treat them uniformly. If you add a third provider, mirror that shape.
-- Keep `VITE_*` keys out of any code path that could be reached server-side or committed. `.env.local` is gitignored; `.env.example` is the template.
+- Keep `VITE_*` keys out of any server-side code path or commits. Server-only secrets (e.g. `SCREENSHOTONE_API_KEY`) belong in env without the `VITE_` prefix and are read only from `api/`. `.env.local` is gitignored; `.env.example` is the template.
 - Tailwind v4 is in use — class names are JIT-compiled from sources; no `tailwind.config.js` is required for default usage.
 - **Do not commit unless the user explicitly asks.** The user reviews files before commits.
 
@@ -32,10 +35,11 @@ When the user says "add a new skill for the agent to use during analysis," they 
 | Add or swap an LLM provider | `src/services/` (new adapter) + `src/services/aiClient.js` (router) |
 | Change loading copy or steps | `LOADING_STEPS` in `src/App.jsx` |
 | Adjust how results render | `src/components/output/results/` |
-| Wire up URL-as-input (currently disabled in `readinessText`) | `App.jsx` `hasSource` + `runAnalysis`, plus `SourceField`/`UrlInput` |
+| URL capture / scrape behavior | `api/screenshot.js`, `api/scrape.js`, `api/_lib/`, `src/utils/url.js`, `src/utils/formatStructuralContext.js` |
+| URL vs screenshot orchestration | `App.jsx` (`hasSource`, `runAnalysis`), `SourceField`/`UrlInput` |
 
 ## Known limitations
 
-- URL input is shown in the UI but blocked at the readiness check; only screenshot mode actually runs.
-- API keys are exposed to the browser. Acceptable for local/dev use; for any deployed scenario, add a proxy.
+- URL mode requires `npx vercel dev` (port 3000) alongside `npm run dev` locally, plus `SCREENSHOTONE_API_KEY`. Screenshot mode only needs Vite.
+- LLM API keys (`VITE_*`) are exposed to the browser. Acceptable for local/dev use; for production, proxy LLM calls server-side.
 - No automated tests yet.

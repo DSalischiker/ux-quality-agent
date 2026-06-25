@@ -75,7 +75,7 @@ export default function SourceField({ mode, file, fileDataUrl, url, onModeChange
         <>
           <UrlInput url={url} onChange={onUrlChange} />
           <div className="text-[11px] text-[var(--ink-4)] font-mono mt-2">
-            The agent will reason from the URL and the context you provide below.
+            Captures a live screenshot and HTML semantics, then audits like a screenshot upload.
           </div>
         </>
       )}
